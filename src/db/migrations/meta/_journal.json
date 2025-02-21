@@ -1,0 +1,27 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1739961872597,
+      "tag": "0000_light_inertia",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1740064091220,
+      "tag": "0001_sour_shard",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1740064147409,
+      "tag": "0002_stale_rockslide",
+      "breakpoints": true
+    }
+  ]
+}
