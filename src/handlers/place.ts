@@ -1,6 +1,12 @@
+import { v2 as cloudinary } from "cloudinary";
 import { Request, Response } from "express";
+import { UploadedFile } from "express-fileupload";
 import { db } from "../db/db";
-import { CategoryPlaceTable, PlaceTable } from "../db/schema";
+import {
+  CategoryPlaceTable,
+  PlaceSchedulesTable,
+  PlaceTable,
+} from "../db/schema";
 import { eq } from "drizzle-orm";
 
 export const getAll = async (req: Request, res: Response) => {
@@ -71,10 +77,8 @@ export const getPlacesByCategory = async (req: Request, res: Response) => {
   }
 };
 
-export const registePlacerWithCategories = async (
-  req: Request,
-  res: Response
-) => {
+export const registerPlace = async (req: Request, res: Response) => {
+  console.log({ body: req.body, files: req.files });
   try {
     const {
       name,
@@ -84,40 +88,81 @@ export const registePlacerWithCategories = async (
       phone,
       country,
       city,
-      urlImage,
       categories,
+      schedule,
     } = req.body;
 
-    const place = await db
-      .insert(PlaceTable)
-      .values({
-        name,
-        address,
-        lat,
-        lng,
-        phone,
-        country,
-        city,
-        urlImage,
-      })
-      .returning();
+    const urlImage = "";
 
-    const placeId = place[0].id;
+    await db.transaction(async (tx) => {
+      const place = await tx
+        .insert(PlaceTable)
+        .values({
+          name,
+          address,
+          lat,
+          lng,
+          phone,
+          country,
+          urlImage,
+          city,
+        })
+        .returning();
 
-    const categoryPlace = categories.map((categoryId: number) => ({
-      categoryId,
-      placeId,
-    }));
+      const placeId = place[0].id;
 
-    await db.insert(CategoryPlaceTable).values(categoryPlace);
+      const categoryPlace = categories.map((category: any) => ({
+        categoryId: category.value,
+        placeId,
+      }));
 
-    const response = {
-      data: place,
-      message: "Place registered successfully",
-    };
+      const placeSchedules = schedule.map((item: any) => ({
+        placeId,
+        ...item,
+      }));
 
-    res.status(201).json(response);
+      await tx.insert(CategoryPlaceTable).values(categoryPlace);
+      await tx.insert(PlaceSchedulesTable).values(placeSchedules);
+
+      const response = {
+        data: place,
+        message: "Place registered successfully",
+      };
+
+      res.status(201).json(response);
+    });
   } catch (error) {
     console.error(error);
+  }
+};
+
+export const uploadImage = async (req: Request, res: Response) => {
+  try {
+    cloudinary.config({
+      cloud_name: "datg1ylrp",
+      api_key: "416186796815297",
+      api_secret: "_iV7Aa-qF07SYSaqmtUBRaNeGAs", // Replace with your actual API secret
+    });
+
+    if (!req.files || !req.files.image) {
+      res.status(400).json({ message: "No file uploaded" });
+      return;
+    }
+
+    // Get the uploaded file
+    const image = req.files.image as UploadedFile;
+
+    // Upload file to Cloudinary
+    const uploadResult = await cloudinary.uploader.upload(image.tempFilePath, {
+      folder: "city-de-moda",
+    });
+
+    res.json({
+      message: "Upload successful",
+      url: uploadResult.secure_url,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Upload failed", error });
   }
 };

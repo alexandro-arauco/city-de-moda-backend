@@ -9,10 +9,11 @@ export const placeSchema = z.object({
   phone: z.string(),
   country: z.string(),
   city: z.string(),
-  urlImage: z.string(),
   active: z.boolean(),
-
-  categories: z.array(z.number()),
+  categories: z.string(),
+  schedule: z.string(),
+  mainImage: z.instanceof(File).optional(),
+  additionalImages: z.array(z.instanceof(File)).optional(),
 });
 
 export const insertPlaceSchema = placeSchema.omit({
