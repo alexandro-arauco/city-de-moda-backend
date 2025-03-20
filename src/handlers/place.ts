@@ -178,6 +178,8 @@ const insertPlaceImage = async (
         placeId,
       })
       .returning();
+
+    await new Promise((r) => setTimeout(r, 2000));
   } catch (error) {
     console.error("Insert Place Image", error);
   }
