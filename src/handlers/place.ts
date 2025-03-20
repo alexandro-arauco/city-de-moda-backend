@@ -140,11 +140,12 @@ export const registerPlace = async (req: Request, res: Response) => {
           .where(eq(PlaceTable.id, placeId));
 
         if (Array.isArray(additionalImages)) {
-          additionalImages.forEach(async (file: UploadedFile) => {
-            const urlImage = await urlUploadImage(file, placeId);
-
-            await insertPlaceImage(tx, placeId, urlImage);
-          });
+          await Promise.all(
+            additionalImages.map(async (file: UploadedFile) => {
+              const urlImage = await urlUploadImage(file, placeId);
+              await insertPlaceImage(tx, placeId, urlImage);
+            })
+          );
         } else {
           const urlImage = await urlUploadImage(
             additionalImages as UploadedFile,
