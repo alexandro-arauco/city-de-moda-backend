@@ -192,7 +192,6 @@ const urlUploadImage = async (file: UploadedFile, placeId: number) => {
       {
         folder: `city-de-moda/places/${placeId}`,
         resource_type: "image",
-        overwrite: true,
       }
     );
 
