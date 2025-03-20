@@ -80,19 +80,29 @@ export function validateFiles(
         .json({ error: "No files uploaded" });
     }
 
-    const files = Array.isArray(req.files) ? req.files : Object.values(req.files);
+    const files = Array.isArray(req.files)
+      ? req.files
+      : Object.values(req.files);
 
     for (const file of files) {
       if (file.size > maxSize) {
         return res
           .status(StatusCodes.BAD_REQUEST)
-          .json({ error: `File ${file.name} exceeds maximum size of ${maxSize / (1024 * 1024)}MB` });
+          .json({
+            error: `File ${file.name} exceeds maximum size of ${
+              maxSize / (1024 * 1024)
+            }MB`,
+          });
       }
 
       if (!allowedTypes.includes(file.mimetype)) {
         return res
           .status(StatusCodes.BAD_REQUEST)
-          .json({ error: `File ${file.name} has invalid type. Allowed types: ${allowedTypes.join(", ")}` });
+          .json({
+            error: `File ${
+              file.name
+            } has invalid type. Allowed types: ${allowedTypes.join(", ")}`,
+          });
       }
     }
 
@@ -113,10 +123,14 @@ export function validateDataAndFiles(
         const errorMessages = error.errors.map((issue: any) => ({
           message: `${issue.path.join(".")} is ${issue.message}`,
         }));
-        res.status(StatusCodes.BAD_REQUEST).json({ error: "Invalid data", details: errorMessages });
+        res
+          .status(StatusCodes.BAD_REQUEST)
+          .json({ error: "Invalid data", details: errorMessages });
         return;
       } else {
-        res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ error: "Internal Server Error" });
+        res
+          .status(StatusCodes.INTERNAL_SERVER_ERROR)
+          .json({ error: "Internal Server Error" });
         return;
       }
     }
@@ -126,19 +140,29 @@ export function validateDataAndFiles(
       return;
     }
 
-    const files = Array.isArray(req.files) ? req.files : Object.values(req.files);
+    // Handle both single objects and arrays of objects
+    const files = Object.values(req.files).flatMap(file => {
+      if (Array.isArray(file)) {
+        return file;
+      }
+      return [file];
+    });
 
     for (const file of files) {
       if (file.size > maxFileSize) {
-        res.status(StatusCodes.BAD_REQUEST).json({ 
-          error: `File ${file.name} exceeds maximum size of ${maxFileSize / (1024 * 1024)}MB` 
+        res.status(StatusCodes.BAD_REQUEST).json({
+          error: `File ${file.name} exceeds maximum size of ${
+            maxFileSize / (1024 * 1024)
+          }MB`,
         });
         return;
       }
 
       if (!allowedFileTypes.includes(file.mimetype)) {
-        res.status(StatusCodes.BAD_REQUEST).json({ 
-          error: `File ${file.name} has invalid type. Allowed types: ${allowedFileTypes.join(", ")}` 
+        res.status(StatusCodes.BAD_REQUEST).json({
+          error: `File ${
+            file.name
+          } has invalid type. Allowed types: ${allowedFileTypes.join(", ")}`,
         });
         return;
       }

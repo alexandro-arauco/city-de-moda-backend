@@ -1,4 +1,4 @@
-import { count } from "console";
+import { relations } from "drizzle-orm";
 import {
   boolean,
   integer,
@@ -7,9 +7,6 @@ import {
   text,
   timestamp,
 } from "drizzle-orm/pg-core";
-import { update } from "../handlers/category";
-import { relations } from "drizzle-orm";
-import { placeSchema } from "../schemas/placeSchema";
 
 export const CategoryTable = pgTable("category", {
   id: serial("id").primaryKey(),
@@ -82,6 +79,22 @@ export const PlaceSchedulesTableRelations = relations(
   ({ one }) => ({
     placeTable: one(PlaceTable, {
       fields: [PlaceSchedulesTable.placeId],
+      references: [PlaceTable.id],
+    }),
+  })
+);
+
+export const PlaceImagesTable = pgTable("place_images", {
+  id: serial("id").primaryKey(),
+  url: text().notNull(),
+  placeId: integer("place_id"),
+});
+
+export const PlaceImagesTableRelations = relations(
+  PlaceImagesTable,
+  ({ one }) => ({
+    placeTable: one(PlaceTable, {
+      fields: [PlaceImagesTable.placeId],
       references: [PlaceTable.id],
     }),
   })

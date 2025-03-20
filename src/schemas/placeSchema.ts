@@ -20,3 +20,9 @@ export const insertPlaceSchema = placeSchema.omit({
   id: true,
   active: true,
 });
+
+export type Schedule = {
+  day: string;
+  initHour: string;
+  endHour: string;
+};

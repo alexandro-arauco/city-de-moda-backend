@@ -3,7 +3,6 @@ import {
   getAll,
   getById,
   getPlacesByCategory,
-  uploadImage,
   registerPlace,
 } from "../handlers/place";
 import {
