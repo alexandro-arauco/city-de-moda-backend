@@ -143,8 +143,6 @@ export const registerPlace = async (req: Request, res: Response) => {
           additionalImages.forEach(async (file: UploadedFile) => {
             const urlImage = await urlUploadImage(file, placeId);
 
-            await new Promise((r) => setTimeout(r, 2000));
-
             await insertPlaceImage(tx, placeId, urlImage);
           });
         } else {
