@@ -191,7 +191,7 @@ const urlUploadImage = async (file: UploadedFile, placeId: number) => {
       {
         folder: `city-de-moda/places/${placeId}`,
         resource_type: "image",
-        transformation: { width: 800, height: 600, crop: "fill" },
+        transformation: { width: 800, height: 600, crop: "limit" },
         chunk_size: 6000000,
       }
     );
