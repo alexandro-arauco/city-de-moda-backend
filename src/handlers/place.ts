@@ -1,18 +1,17 @@
-import { eq } from "drizzle-orm";
-import { PgTransaction } from "drizzle-orm/pg-core";
 import { Request, Response } from "express";
-import { UploadedFile } from "express-fileupload";
 import { z } from "zod";
 import { db } from "../db/db";
+import { PlaceTable } from "../db/schema";
+import { placeSchema } from "../schemas/placeSchema";
 import {
-  CategoryPlaceTable,
-  PlaceImagesTable,
-  PlaceSchedulesTable,
-  PlaceTable,
-} from "../db/schema";
-import { categorySchema } from "../schemas/categorySchema";
-import { Schedule } from "../schemas/placeSchema";
-import { cloudinaryConfig } from "../utils/cloudinaryUtil";
+  insertImages,
+  insertPlaceCategory,
+  insertPlaceSchedule,
+  insertPlaceServices,
+  insertPlaceSocialMedia,
+  insertPlaceVideos,
+} from "../utils/placeUtils";
+import { extractLatLng } from "../utils/utilities";
 
 export const getAll = async (req: Request, res: Response) => {
   try {
@@ -84,154 +83,74 @@ export const getPlacesByCategory = async (req: Request, res: Response) => {
 
 export const registerPlace = async (req: Request, res: Response) => {
   try {
-    const { name, address, lat, lng, phone, country, city } = req.body;
+    const {
+      name,
+      address,
+      phone,
+      country,
+      city,
+      additionalContact,
+      whatsapp,
+      description,
+      email,
+      videos,
+      location,
+      socialMedia,
+      schedule,
+    } = req.body as z.infer<typeof placeSchema>;
 
     const urlImage = "";
-
-    type Categories = Omit<z.infer<typeof categorySchema>, "active">;
-    const categories: Categories[] = JSON.parse(req.body.categories);
-
-    const schedules: Schedule[] = JSON.parse(req.body.schedule);
+    const { latitude, longitude } = extractLatLng(location || "");
 
     await db.transaction(async (tx) => {
-      const place = await tx
-        .insert(PlaceTable)
-        .values({
-          name: JSON.parse(name),
-          address: JSON.parse(address),
-          lat,
-          lng,
-          phone: JSON.parse(phone),
-          country: JSON.parse(country),
-          urlImage,
-          city: JSON.parse(city),
-        })
-        .returning();
+      try {
+        const place = await tx
+          .insert(PlaceTable)
+          .values({
+            name: JSON.parse(name),
+            address: JSON.parse(address),
+            lat: latitude.toString(),
+            lng: longitude.toString(),
+            phone: JSON.parse(phone),
+            country: JSON.parse(country),
+            city: JSON.parse(city),
+            urlImage,
+            additionalContact: JSON.parse(additionalContact || ""),
+            whatsapp: JSON.parse(whatsapp || "false"),
+            description: JSON.parse(description || ""),
+            email: JSON.parse(email),
+          })
+          .returning();
 
-      const placeId = place[0].id;
-      if (!placeId) {
-        res.status(400).json({ message: "Error creating place, try again" });
-        return;
-      }
-
-      const categoryPlace = categories.map((category: any) => ({
-        categoryId: category.id,
-        placeId,
-      }));
-
-      const placeSchedules = schedules.map((item) => ({
-        placeId,
-        ...item,
-      }));
-
-      await tx.insert(CategoryPlaceTable).values(categoryPlace);
-      await tx.insert(PlaceSchedulesTable).values(placeSchedules);
-
-      if (req.files) {
-        const { mainImage, additionalImages } = req.files;
-        const urlMainImage = await urlUploadImage(
-          mainImage as UploadedFile,
-          placeId
-        );
-
-        await tx
-          .update(PlaceTable)
-          .set({ urlImage: urlMainImage })
-          .where(eq(PlaceTable.id, placeId));
-
-        if (Array.isArray(additionalImages)) {
-          await Promise.all(
-            additionalImages.map(async (file: UploadedFile) => {
-              const urlImage = await urlUploadImage(file, placeId);
-              await insertPlaceImage(tx, placeId, urlImage);
-            })
-          );
-        } else {
-          const urlImage = await urlUploadImage(
-            additionalImages as UploadedFile,
-            placeId
-          );
-          await insertPlaceImage(tx, placeId, urlImage);
+        const placeId = place[0].id;
+        if (!placeId) {
+          res.status(400).json({ message: "Error creating place, try again" });
+          return;
         }
+
+        await insertPlaceCategory(tx, req.body.categories, placeId);
+        await insertPlaceSchedule(tx, schedule, placeId);
+        await insertPlaceServices(tx, req.body.services, placeId);
+        await insertPlaceSocialMedia(tx, socialMedia || "[]", placeId);
+        await insertPlaceVideos(tx, videos || "[]", placeId);
+
+        if (req.files) {
+          const { mainImage, additionalImages } = req.files;
+          await insertImages(tx, mainImage, additionalImages, placeId);
+        }
+
+        const response = {
+          data: place,
+          message: "Place registered successfully",
+        };
+
+        res.status(201).json(response);
+      } catch (error) {
+        console.error("Register Place", error);
+        throw error;
       }
-
-      const response = {
-        data: place,
-        message: "Place registered successfully",
-      };
-
-      res.status(201).json(response);
     });
   } catch (error) {
     console.error("Insert Place", error);
   }
 };
-
-const insertPlaceImage = async (
-  tx: PgTransaction<any, any, any>,
-  placeId: number,
-  url: string
-) => {
-  try {
-    await tx
-      .insert(PlaceImagesTable)
-      .values({
-        url,
-        placeId,
-      })
-      .returning();
-  } catch (error) {
-    console.error("Insert Place Image", error);
-  }
-};
-
-const urlUploadImage = async (file: UploadedFile, placeId: number) => {
-  try {
-    const uploadResult = await cloudinaryConfig.uploader.upload(
-      file.tempFilePath,
-      {
-        folder: `city-de-moda/places/${placeId}`,
-        resource_type: "image",
-        transformation: { width: 800, height: 600, crop: "limit" },
-        chunk_size: 6000000,
-      }
-    );
-
-    return uploadResult.secure_url;
-  } catch (error) {
-    console.error("Upload Image to Cloudinary failed:", error);
-
-    return "";
-  }
-};
-
-/* export const uploadImage = async (req: Request, res: Response) => {
-  try {
-    cloudinary.config({
-      cloud_name: "datg1ylrp",
-      api_key: "416186796815297",
-      api_secret: "_iV7Aa-qF07SYSaqmtUBRaNeGAs", // Replace with your actual API secret
-    });
-
-    if (!req.files || !req.files.image) {
-      res.status(400).json({ message: "No file uploaded" });
-      return;
-    }
-
-    // Get the uploaded file
-    const image = req.files.image as UploadedFile;
-
-    // Upload file to Cloudinary
-    const uploadResult = await cloudinary.uploader.upload(image.tempFilePath, {
-      folder: "city-de-moda",
-    });
-
-    res.json({
-      message: "Upload successful",
-      url: uploadResult.secure_url,
-    });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Upload failed", error });
-  }
-}; */

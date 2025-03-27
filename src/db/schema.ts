@@ -1,4 +1,4 @@
-import { relations } from "drizzle-orm";
+import { desc, relations } from "drizzle-orm";
 import {
   boolean,
   integer,
@@ -26,6 +26,10 @@ export const PlaceTable = pgTable("place", {
   city: text().notNull(),
   urlImage: text().notNull(),
   active: boolean().notNull().default(true),
+  additionalContact: text().notNull(),
+  whatsapp: boolean().notNull(),
+  description: text().notNull(),
+  email: text().notNull(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
@@ -95,6 +99,55 @@ export const PlaceImagesTableRelations = relations(
   ({ one }) => ({
     placeTable: one(PlaceTable, {
       fields: [PlaceImagesTable.placeId],
+      references: [PlaceTable.id],
+    }),
+  })
+);
+
+export const PlaceServicesTable = pgTable("place_services", {
+  id: serial("id").primaryKey(),
+  name: text().notNull(),
+  placeId: integer("place_id"),
+});
+
+export const PlaceServicesTableRelations = relations(
+  PlaceServicesTable,
+  ({ one }) => ({
+    placeTable: one(PlaceTable, {
+      fields: [PlaceServicesTable.placeId],
+      references: [PlaceTable.id],
+    }),
+  })
+);
+
+export const PlaceVideosTable = pgTable("place_videos", {
+  id: serial("id").primaryKey(),
+  url: text().notNull(),
+  placeId: integer("place_id"),
+});
+
+export const PlaceVideosTableRelations = relations(
+  PlaceVideosTable,
+  ({ one }) => ({
+    placeTable: one(PlaceTable, {
+      fields: [PlaceVideosTable.placeId],
+      references: [PlaceTable.id],
+    }),
+  })
+);
+
+export const PlaceSocialMediaTable = pgTable("place_social_media", {
+  id: serial("id").primaryKey(),
+  name: text().notNull(),
+  url: text().notNull(),
+  placeId: integer("place_id"),
+});
+
+export const PlaceSocialMediaTableRelations = relations(
+  PlaceSocialMediaTable,
+  ({ one }) => ({
+    placeTable: one(PlaceTable, {
+      fields: [PlaceSocialMediaTable.placeId],
       references: [PlaceTable.id],
     }),
   })
