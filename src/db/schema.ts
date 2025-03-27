@@ -27,7 +27,7 @@ export const PlaceTable = pgTable("place", {
   urlImage: text().notNull(),
   active: boolean().notNull().default(true),
   additionalContact: text().notNull(),
-  whatsapp: boolean().notNull(),
+  whatsapp: boolean().notNull().default(false),
   description: text().notNull(),
   email: text().notNull(),
   createdAt: timestamp("created_at").notNull().defaultNow(),

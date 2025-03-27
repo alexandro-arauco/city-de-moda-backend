@@ -5,36 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1739961872597,
-      "tag": "0000_light_inertia",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1740064091220,
-      "tag": "0001_sour_shard",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1740064147409,
-      "tag": "0002_stale_rockslide",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "7",
-      "when": 1741631475543,
-      "tag": "0003_brief_karma",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "7",
-      "when": 1742468916106,
-      "tag": "0004_worthless_magneto",
+      "when": 1743117495089,
+      "tag": "0000_glossy_cloak",
       "breakpoints": true
     }
   ]
